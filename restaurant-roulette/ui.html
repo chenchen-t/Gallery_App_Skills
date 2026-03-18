@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roulette UI</title>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1e1e2f; color: #fff; font-family: sans-serif; overflow: hidden; }
+        h2 { margin: 10px 0 30px 0; text-align: center; font-size: 24px; padding: 0 15px; }
+        #wheel-container { position: relative; width: 320px; height: 320px; margin-bottom: 30px; }
+        canvas { width: 100%; height: 100%; filter: drop-shadow(0 8px 15px rgba(0,0,0,0.5)); }
+        #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        button { background: #ff4757; color: white; border: none; padding: 15px 40px; font-size: 22px; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4); }
+        button:active { transform: scale(0.95); }
+        button:disabled { background: #555; cursor: not-allowed; box-shadow: none; }
+        #result { margin-top: 20px; font-size: 26px; font-weight: bold; text-align: center; min-height: 60px; color: #2ed573; padding: 0 20px; }
+    </style>
+</head>
+<body>
+    <h2 id="title">Loading...</h2>
+    
+    <div id="wheel-container">
+        <div id="pointer"></div>
+        <canvas id="wheelCanvas" width="500" height="500"></canvas>
+    </div>
+    
+    <button id="spin-btn">SPIN ROULETTE</button>
+    <div id="result"></div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const places = JSON.parse(params.get('places') || '[]');
+        const cuisine = params.get('cuisine') || 'Food';
+        const locationStr = params.get('location') || 'Bay Area';
+
+        document.getElementById('title').innerText = `Select your ${cuisine} spot in ${locationStr}!`;
+
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const cx = 250, cy = 250, radius = 230;
+        const N = places.length;
+        const arc = (2 * Math.PI) / N;
+        let angle = 0;
+        const colors = ['#ff4757', '#ffa502', '#2ed573', '#1e90ff', '#3742fa', '#ff6348', '#eccc68', '#7bed9f', '#70a1ff', '#5352ed'];
+
+        function draw() {
+            ctx.clearRect(0, 0, 500, 500);
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(angle);
+
+            for (let i = 0; i < N; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, i * arc, (i + 1) * arc);
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#1e1e2f';
+                ctx.stroke();
+
+                ctx.save();
+                const rot = N === 1 ? 0 : (i * arc) + (arc / 2);
+                ctx.rotate(rot);
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 22px sans-serif';
+                let text = places[i];
+                if (text.length > 16) text = text.substring(0, 14) + '...';
+                ctx.fillText(text, radius - 20, 0);
+                ctx.restore();
+            }
+
+            ctx.beginPath();
+            ctx.arc(0, 0, 35, 0, 2 * Math.PI);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        draw();
+
+        const spinBtn = document.getElementById('spin-btn');
+        spinBtn.onclick = () => {
+            spinBtn.disabled = true;
+            document.getElementById('result').innerText = 'Spinning...';
+            document.getElementById('result').style.color = '#ffffff';
+            let velocity = Math.random() * 0.2 + 0.35; 
+            
+            function animate() {
+                angle += velocity;
+                velocity *= 0.985;
+                draw();
+
+                if (velocity < 0.002) {
+                    let p = (-Math.PI / 2 - angle) % (2 * Math.PI);
+                    if (p < 0) p += 2 * Math.PI;
+                    const winner = places[Math.floor(p / arc)];
+                    
+                    document.getElementById('result').style.color = '#2ed573';
+                    document.getElementById('result').innerHTML = '🎉 Winner! 🎉<br/>' + winner;
+                    spinBtn.style.display = 'none';
+                } else {
+                    requestAnimationFrame(animate);
+                }
+            }
+            animate();
+        };
+    </script>
+</body>
+</html>
