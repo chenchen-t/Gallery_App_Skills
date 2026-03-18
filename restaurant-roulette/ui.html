@@ -35,7 +35,6 @@
         const locationStr = params.get('l') || 'Bay Area';
         const compressedData = params.get('data');
 
-        // 1. Decode the compressed Base64 data back into the array of names!
         let places = [];
         if (compressedData) {
             try {
@@ -107,6 +106,7 @@
 
         draw();
 
+        // NO MORE AUTO-SPIN! It will only spin when you tap.
         function triggerSpin() {
             if (isSpinning) return;
             isSpinning = true;
