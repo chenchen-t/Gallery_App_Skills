@@ -2,23 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Roulette UI</title>
     <style>
-        body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1e1e2f; color: #fff; font-family: sans-serif; overflow: hidden; }
-        h2 { margin: 10px 0 30px 0; text-align: center; font-size: 24px; padding: 0 15px; }
-        #wheel-container { position: relative; width: 320px; height: 320px; margin-bottom: 30px; }
+        /* Added touch-action: manipulation to prevent mobile zooming/scrolling issues */
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1e1e2f; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: manipulation; }
+        h2 { margin: 10px 0 20px 0; text-align: center; font-size: 22px; padding: 0 15px; pointer-events: none; }
+        
+        /* Made the whole container clickable */
+        #wheel-container { position: relative; width: 320px; height: 320px; margin-bottom: 20px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         canvas { width: 100%; height: 100%; filter: drop-shadow(0 8px 15px rgba(0,0,0,0.5)); }
-        #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-        button { background: #ff4757; color: white; border: none; padding: 15px 40px; font-size: 22px; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4); }
+        
+        #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); pointer-events: none; }
+        
+        button { background: #ff4757; color: white; border: none; padding: 15px 40px; font-size: 20px; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4); -webkit-tap-highlight-color: transparent; }
         button:active { transform: scale(0.95); }
         button:disabled { background: #555; cursor: not-allowed; box-shadow: none; }
-        #result { margin-top: 20px; font-size: 26px; font-weight: bold; text-align: center; min-height: 60px; color: #2ed573; padding: 0 20px; }
+        
+        #result { margin-top: 15px; font-size: 24px; font-weight: bold; text-align: center; min-height: 60px; color: #2ed573; padding: 0 20px; }
+        .instruction { font-size: 14px; color: #aaa; margin-top: -10px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <h2 id="title">Loading...</h2>
+    <div class="instruction">Tap the wheel to spin!</div>
     
+    <!-- The wheel is now the primary button -->
     <div id="wheel-container">
         <div id="pointer"></div>
         <canvas id="wheelCanvas" width="500" height="500"></canvas>
@@ -36,11 +45,15 @@
         document.getElementById('title').innerText = `Select your ${cuisine} spot in ${locationStr}!`;
 
         const canvas = document.getElementById('wheelCanvas');
+        const wheelContainer = document.getElementById('wheel-container');
+        const spinBtn = document.getElementById('spin-btn');
         const ctx = canvas.getContext('2d');
+        
         const cx = 250, cy = 250, radius = 230;
         const N = places.length;
         const arc = (2 * Math.PI) / N;
         let angle = 0;
+        let isSpinning = false;
         const colors = ['#ff4757', '#ffa502', '#2ed573', '#1e90ff', '#3742fa', '#ff6348', '#eccc68', '#7bed9f', '#70a1ff', '#5352ed'];
 
         function draw() {
@@ -76,24 +89,36 @@
             ctx.arc(0, 0, 35, 0, 2 * Math.PI);
             ctx.fillStyle = '#fff';
             ctx.fill();
+            
+            // Add a little inner dot to make it look like a spinner
+            ctx.beginPath();
+            ctx.arc(0, 0, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1e1e2f';
+            ctx.fill();
+            
             ctx.restore();
         }
 
         draw();
 
-        const spinBtn = document.getElementById('spin-btn');
-        spinBtn.onclick = () => {
+        function triggerSpin() {
+            if (isSpinning) return;
+            isSpinning = true;
             spinBtn.disabled = true;
+            
             document.getElementById('result').innerText = 'Spinning...';
             document.getElementById('result').style.color = '#ffffff';
+            
+            // Randomize speed for authentic feel
             let velocity = Math.random() * 0.2 + 0.35; 
             
             function animate() {
                 angle += velocity;
-                velocity *= 0.985;
+                velocity *= 0.985; // Friction slows it down
                 draw();
 
                 if (velocity < 0.002) {
+                    isSpinning = false;
                     let p = (-Math.PI / 2 - angle) % (2 * Math.PI);
                     if (p < 0) p += 2 * Math.PI;
                     const winner = places[Math.floor(p / arc)];
@@ -101,12 +126,21 @@
                     document.getElementById('result').style.color = '#2ed573';
                     document.getElementById('result').innerHTML = '🎉 Winner! 🎉<br/>' + winner;
                     spinBtn.style.display = 'none';
+                    document.querySelector('.instruction').style.display = 'none';
                 } else {
                     requestAnimationFrame(animate);
                 }
             }
             animate();
-        };
+        }
+
+        // Add support for BOTH mouse clicks and mobile taps
+        spinBtn.addEventListener('click', triggerSpin);
+        spinBtn.addEventListener('touchstart', (e) => { e.preventDefault(); triggerSpin(); });
+        
+        wheelContainer.addEventListener('click', triggerSpin);
+        wheelContainer.addEventListener('touchstart', (e) => { e.preventDefault(); triggerSpin(); });
+
     </script>
 </body>
 </html>
