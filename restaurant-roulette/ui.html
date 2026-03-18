@@ -5,20 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Roulette UI</title>
     <style>
-        /* Added touch-action: manipulation to prevent mobile zooming/scrolling issues */
         body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1e1e2f; color: #fff; font-family: sans-serif; overflow: hidden; touch-action: manipulation; }
         h2 { margin: 10px 0 20px 0; text-align: center; font-size: 22px; padding: 0 15px; pointer-events: none; }
-        
-        /* Made the whole container clickable */
         #wheel-container { position: relative; width: 320px; height: 320px; margin-bottom: 20px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         canvas { width: 100%; height: 100%; filter: drop-shadow(0 8px 15px rgba(0,0,0,0.5)); }
-        
         #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #ff4757; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); pointer-events: none; }
-        
         button { background: #ff4757; color: white; border: none; padding: 15px 40px; font-size: 20px; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4); -webkit-tap-highlight-color: transparent; }
         button:active { transform: scale(0.95); }
         button:disabled { background: #555; cursor: not-allowed; box-shadow: none; }
-        
         #result { margin-top: 15px; font-size: 24px; font-weight: bold; text-align: center; min-height: 60px; color: #2ed573; padding: 0 20px; }
         .instruction { font-size: 14px; color: #aaa; margin-top: -10px; margin-bottom: 20px; }
     </style>
@@ -27,7 +21,6 @@
     <h2 id="title">Loading...</h2>
     <div class="instruction">Tap the wheel to spin!</div>
     
-    <!-- The wheel is now the primary button -->
     <div id="wheel-container">
         <div id="pointer"></div>
         <canvas id="wheelCanvas" width="500" height="500"></canvas>
@@ -38,9 +31,23 @@
 
     <script>
         const params = new URLSearchParams(window.location.search);
-        const places = JSON.parse(params.get('places') || '[]');
-        const cuisine = params.get('cuisine') || 'Food';
-        const locationStr = params.get('location') || 'Bay Area';
+        const cuisine = params.get('c') || 'Food';
+        const locationStr = params.get('l') || 'Bay Area';
+        const compressedData = params.get('data');
+
+        // 1. Decode the compressed Base64 data back into the array of names!
+        let places = [];
+        if (compressedData) {
+            try {
+                const placeString = decodeURIComponent(escape(atob(compressedData)));
+                places = placeString.split('|');
+            } catch (e) {
+                console.error("Failed to decode data", e);
+                places = ["Error Loading Data"];
+            }
+        } else {
+            places = ["No Options Found"];
+        }
 
         document.getElementById('title').innerText = `Select your ${cuisine} spot in ${locationStr}!`;
 
@@ -90,7 +97,6 @@
             ctx.fillStyle = '#fff';
             ctx.fill();
             
-            // Add a little inner dot to make it look like a spinner
             ctx.beginPath();
             ctx.arc(0, 0, 10, 0, 2 * Math.PI);
             ctx.fillStyle = '#1e1e2f';
@@ -109,12 +115,11 @@
             document.getElementById('result').innerText = 'Spinning...';
             document.getElementById('result').style.color = '#ffffff';
             
-            // Randomize speed for authentic feel
             let velocity = Math.random() * 0.2 + 0.35; 
             
             function animate() {
                 angle += velocity;
-                velocity *= 0.985; // Friction slows it down
+                velocity *= 0.985; 
                 draw();
 
                 if (velocity < 0.002) {
@@ -134,7 +139,6 @@
             animate();
         }
 
-        // Add support for BOTH mouse clicks and mobile taps
         spinBtn.addEventListener('click', triggerSpin);
         spinBtn.addEventListener('touchstart', (e) => { e.preventDefault(); triggerSpin(); });
         
