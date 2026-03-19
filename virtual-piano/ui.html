@@ -7,81 +7,60 @@
     <style>
         body { margin: 0; background-color: #1e1e2f; display: flex; align-items: center; height: 100vh; overflow-y: hidden; }
         
-        #piano-scroll-container { 
-            width: 100%; 
-            overflow-x: auto; 
-            white-space: nowrap; 
-            -ms-overflow-style: none; 
-            scrollbar-width: none; 
-            padding: 20px; 
-            touch-action: pan-x; 
-        }
+        #piano-scroll-container { width: 100%; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; padding: 20px; touch-action: pan-x; }
         #piano-scroll-container::-webkit-scrollbar { display: none; }
         
         #piano { display: inline-flex; flex-direction: column; background: #222; padding: 10px 10px 0 10px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 2px 5px rgba(255,255,255,0.1); }
         
         #key-container { display: flex; position: relative; }
         
+        /* The localized wrappers that lock the hitboxes in place */
+        .key-group { position: relative; display: block; flex-shrink: 0; }
+        
         #scroll-lip { height: 60px; background: linear-gradient(to bottom, #333, #1a1a1a); border-top: 2px solid #111; border-radius: 0 0 10px 10px; display: flex; align-items: center; justify-content: center; margin: 0 -10px; color: #666; font-family: sans-serif; font-size: 16px; font-weight: bold; letter-spacing: 3px; user-select: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
         
-        /* White Keys (3D Restored!) */
+        /* White Keys (3D) */
         .key.white {
             touch-action: pan-x; 
-            width: 60px; 
-            height: 250px; 
-            
-            /* 3D Lighting Gradient */
+            width: 60px; height: 250px; 
             background: linear-gradient(to bottom, #ffffff 80%, #f0f0f0 100%);
-            
-            flex-shrink: 0; 
             box-sizing: border-box;
-            
-            /* Beveled 3D Edges */
-            border-left: 1px solid #fff;
             border-right: 1px solid #ccc;
             border-bottom: 2px solid #bbb;
-            
-            /* Restored Drop Shadows and Rounded Tips */
             border-radius: 0 0 6px 6px;
             box-shadow: 0 4px 5px rgba(0,0,0,0.2);
-            
-            cursor: pointer; -webkit-tap-highlight-color: transparent; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 15px; font-family: sans-serif; font-size: 14px; font-weight: bold; color: #aaa; user-select: none; z-index: 1; 
+            cursor: pointer; -webkit-tap-highlight-color: transparent; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 15px; font-family: sans-serif; font-size: 14px; font-weight: bold; color: #aaa; user-select: none;
         }
-        .key.white:first-child { border-left: 1px solid #ccc; } 
+        .key-group:first-child .key.white { border-left: 1px solid #ccc; } 
         
-        /* 3D Pressed Effect */
+        /* White Key 3D Pressed Effect */
         .key.white:active, .key.white.active { 
             background: #e0e0e0; 
-            border-bottom: 1px solid #999; /* Flattens the bottom edge */
-            box-shadow: inset 0 3px 8px rgba(0,0,0,0.4); 
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.4); 
             color: #333; 
         }
         
-        /* Black Keys (3D Restored!) */
+        /* Black Keys (3D) */
         .key.black {
             touch-action: pan-x; 
-            width: 30px; 
-            height: 140px; 
-            
-            /* Richer 3D Gradient */
+            width: 30px; height: 140px; 
             background: linear-gradient(to bottom, #444, #000); 
-            
-            position: absolute; top: 0; z-index: 10; 
-            
-            /* Restored Drop Shadows and Rounded Tips */
+            position: absolute; 
+            right: -15px; /* Perfect math based on the wrapper */
+            top: 0; 
+            z-index: 10; 
+            box-sizing: border-box; 
             border-radius: 0 0 5px 5px; 
-            border: 1px solid #000;
-            border-bottom: 3px solid #111;
+            border: 1px solid #111;
+            border-bottom: 3px solid #000;
             box-shadow: 2px 4px 6px rgba(0,0,0,0.5); 
-            
             cursor: pointer; -webkit-tap-highlight-color: transparent; 
         }
         
-        /* 3D Pressed Effect */
+        /* Black Key 3D Pressed Effect */
         .key.black:active, .key.black.active { 
             background: #111; 
-            border-bottom: 1px solid #000;
-            box-shadow: inset 0 3px 6px rgba(0,0,0,0.8); 
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.9); 
         }
     </style>
 </head>
@@ -97,11 +76,18 @@
     <script>
         const keyContainer = document.getElementById('key-container'); 
         let noteNumber = 1;
-        let whiteKeyCount = 0; 
+        
+        // Z-Index fix to guarantee left keys sit beautifully over right keys
+        let zIndexCounter = 100; 
+        
         const noteNamesArray = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-        // 1. GENERATE THE KEYS
+        // 1. GENERATE THE KEYS WITH WRAPPERS
         while (noteNumber <= 88) {
+            const group = document.createElement('div');
+            group.className = 'key-group';
+            group.style.zIndex = zIndexCounter--; 
+
             const cOffset = (noteNumber + 8) % 12;
             const noteName = noteNamesArray[cOffset];
             const octave = Math.floor((noteNumber + 8) / 12);
@@ -110,20 +96,17 @@
             whiteKey.className = 'key white';
             whiteKey.setAttribute('data-note', noteNumber);
             whiteKey.innerText = noteName + octave; 
-            keyContainer.appendChild(whiteKey);
-            
-            whiteKeyCount++; 
+            group.appendChild(whiteKey);
 
             if (cOffset !== 4 && cOffset !== 11 && noteNumber !== 88) {
                 noteNumber++; 
                 const blackKey = document.createElement('div');
                 blackKey.className = 'key black';
                 blackKey.setAttribute('data-note', noteNumber);
-                
-                blackKey.style.left = `${(whiteKeyCount * 60) - 15}px`;
-                
-                keyContainer.appendChild(blackKey);
+                group.appendChild(blackKey);
             }
+
+            keyContainer.appendChild(group); 
             noteNumber++; 
         }
 
@@ -143,6 +126,7 @@
 
                 this.classList.add('active');
 
+                // 3-second sound cutoff
                 setTimeout(function() {
                     audio.pause();
                     audio.currentTime = 0;
@@ -154,7 +138,7 @@
             key.addEventListener('pointercancel', function() { this.classList.remove('active'); });
         });
 
-        // 3. AUTO-SCROLL TO MIDDLE C (C4)
+        // 3. AUTO-SCROLL TO MIDDLE C
         setTimeout(() => {
             const middleC = document.querySelector('.key.white[data-note="40"]');
             if (middleC) {
