@@ -177,25 +177,15 @@
                 const note = this.getAttribute('data-note');
                 const audioUrl = `https://chenchen-t.github.io/Gallery_App_Skills/virtual-piano/assets/${note}.mp3`;
                 
-                // By creating a new Audio object on every tap, we allow multiple 
-                // rapid taps of the same key to naturally layer over each other!
                 const audio = new Audio(audioUrl);
                 audio.currentTime = 0; 
-                audio.play().catch(e => console.warn("Waiting for audio:", e));
+                audio.play().catch(e => console.warn("Waiting for audio files:", e));
 
-                // Add the visual pressed effect
                 this.classList.add('active');
             });
 
-            // NEW: Only remove the visual effect. Let the audio ring naturally!
-            const releaseKey = function() {
-                this.classList.remove('active');
-            };
-
-            // Trigger the visual release when the finger lifts or slides off
-            key.addEventListener('pointerup', releaseKey);
-            key.addEventListener('pointerleave', releaseKey);
-            key.addEventListener('pointercancel', releaseKey); 
+            key.addEventListener('pointerup', function() { this.classList.remove('active'); });
+            key.addEventListener('pointerleave', function() { this.classList.remove('active'); });
         });
 
         // AUTO-SCROLL TO MIDDLE C
