@@ -52,27 +52,25 @@
             box-shadow: 0 4px 5px rgba(0,0,0,0.2);
             -webkit-tap-highlight-color: transparent;
             
-            /* NEW: Flexbox perfectly aligns the text to the bottom center */
             display: flex;
             align-items: flex-end;
             justify-content: center;
             padding-bottom: 15px;
-            box-sizing: border-box; /* Keeps the padding from making the key taller */
+            box-sizing: border-box; 
             
-            /* NEW: Typography for the labels */
             font-family: sans-serif;
             font-size: 14px;
             font-weight: bold;
-            color: #aaa; /* Light grey text so it isn't distracting */
-            user-select: none; /* Prevents text highlighting when tapping rapidly */
+            color: #aaa; 
+            user-select: none; 
         }
         .key.white:active, .key.white.active {
             background: #e0e0e0;
             box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
-            color: #333; /* Makes the text dark when the key is pressed! */
+            color: #333; 
         }
 
-        /* Black Keys (No text needed on these) */
+        /* Black Keys */
         .key.black {
             width: 40px;
             height: 150px;
@@ -101,33 +99,31 @@
     <script>
         const piano = document.getElementById('piano');
         let noteNumber = 1;
-        
-        // NEW: An array of note names so we know exactly what key we are building
+        let zIndexCounter = 100; // NEW: We will use this to fix the touch bug!
+
         const noteNamesArray = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
         // 1. GENERATE THE 88 KEYS DYNAMICALLY
         while (noteNumber <= 88) {
             const group = document.createElement('div');
             group.className = 'key-group';
+            
+            // THE MAGIC FIX: This guarantees the left group is ALWAYS physically layered 
+            // over the right group, so the black key touch target is flawless.
+            group.style.zIndex = zIndexCounter--; 
 
-            // Calculate the exact note letter and the octave number
             const cOffset = (noteNumber + 8) % 12;
             const noteName = noteNamesArray[cOffset];
             const octave = Math.floor((noteNumber + 8) / 12);
 
-            // Create the white key
             const whiteKey = document.createElement('div');
             whiteKey.className = 'key white';
             whiteKey.setAttribute('data-note', noteNumber);
-            
-            // NEW: Add the text directly inside the white key!
             whiteKey.innerText = noteName + octave; 
-            
             group.appendChild(whiteKey);
 
-            // If it's NOT an E, NOT a B, and NOT the final 88th key... add a black key!
             if (cOffset !== 4 && cOffset !== 11 && noteNumber !== 88) {
-                noteNumber++; // Step up to the black key's number
+                noteNumber++; 
                 
                 const blackKey = document.createElement('div');
                 blackKey.className = 'key black';
@@ -158,6 +154,15 @@
 
             key.addEventListener('pointerup', function() { this.classList.remove('active'); });
             key.addEventListener('pointerleave', function() { this.classList.remove('active'); });
+        });
+
+        // 3. BONUS: AUTO-SCROLL TO MIDDLE C WHEN LOADED!
+        window.addEventListener('load', () => {
+            // Note #40 is Middle C (C4) on a standard piano
+            const middleC = document.querySelector('.key.white[data-note="40"]');
+            if (middleC) {
+                middleC.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+            }
         });
     </script>
 </body>
