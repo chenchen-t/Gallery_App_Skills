@@ -179,13 +179,44 @@
                 
                 const audio = new Audio(audioUrl);
                 audio.currentTime = 0; 
-                audio.play().catch(e => console.warn("Waiting for audio files:", e));
+                audio.volume = 1.0; // Ensure volume is full when starting
+                audio.play().catch(e => console.warn("Waiting for audio:", e));
+
+                // SAVE the audio object to this specific key so we can stop it later!
+                this.currentAudio = audio; 
 
                 this.classList.add('active');
             });
 
-            key.addEventListener('pointerup', function() { this.classList.remove('active'); });
-            key.addEventListener('pointerleave', function() { this.classList.remove('active'); });
+            // We create a reusable function to fade out the sound
+            const releaseKey = function() {
+                this.classList.remove('active');
+                
+                // If there is an audio file currently playing for this key...
+                if (this.currentAudio) {
+                    const audioToFade = this.currentAudio;
+                    this.currentAudio = null; // Clear it so we don't trigger it twice
+                    
+                    // Rapidly fade out the volume over 100ms
+                    let fadePoint = 1.0;
+                    const fadeInterval = setInterval(() => {
+                        if (fadePoint > 0.1) {
+                            fadePoint -= 0.1; // Drop volume by 10%
+                            audioToFade.volume = fadePoint;
+                        } else {
+                            // Once silent, stop it completely and clear the timer
+                            clearInterval(fadeInterval);
+                            audioToFade.pause();
+                            audioToFade.currentTime = 0;
+                        }
+                    }, 10); // Happens every 10 milliseconds
+                }
+            };
+
+            // Trigger the fade-out when the finger lifts or slides off the key
+            key.addEventListener('pointerup', releaseKey);
+            key.addEventListener('pointerleave', releaseKey);
+            key.addEventListener('pointercancel', releaseKey); // Good safety net for mobile!
         });
 
         // AUTO-SCROLL TO MIDDLE C
