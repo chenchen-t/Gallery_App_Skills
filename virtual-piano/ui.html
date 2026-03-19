@@ -3,30 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>88-Key Piano</title>
+    <title>88-Key Virtual Piano</title>
     <style>
         body { margin: 0; background-color: #1e1e2f; display: flex; align-items: center; height: 100vh; overflow-y: hidden; }
-        #piano-scroll-container { width: 100%; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; padding: 20px; touch-action: pan-x; }
+        
+        #piano-scroll-container { 
+            width: 100%; 
+            overflow-x: auto; 
+            white-space: nowrap; 
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+            padding: 20px; 
+            touch-action: pan-x; /* Ensures horizontal scrolling works smoothly */
+        }
         #piano-scroll-container::-webkit-scrollbar { display: none; }
         
         #piano { display: inline-flex; flex-direction: column; background: #222; padding: 10px 10px 0 10px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        #key-container { display: inline-flex; position: relative; }
+        
+        #key-container { display: flex; position: relative; }
         
         #scroll-lip { height: 60px; background: linear-gradient(to bottom, #333, #1a1a1a); border-top: 2px solid #111; border-radius: 0 0 10px 10px; display: flex; align-items: center; justify-content: center; margin: 0 -10px; color: #666; font-family: sans-serif; font-size: 16px; font-weight: bold; letter-spacing: 3px; user-select: none; }
         
-        .key-group { position: relative; display: inline-block; }
-        
         /* White Keys */
         .key.white {
-            touch-action: none; /* Allows true multi-touch tapping! */
-            width: 60px; height: 250px; background: white; border: 1px solid #ccc; border-radius: 0 0 5px 5px; margin: 0 1px; cursor: pointer; box-shadow: 0 4px 5px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 15px; box-sizing: border-box; font-family: sans-serif; font-size: 14px; font-weight: bold; color: #aaa; user-select: none; 
+            /* We removed touch-action: none so you can scroll on the keys again! */
+            width: 60px; 
+            height: 250px; 
+            background: white; 
+            
+            /* THE FIX: This stops the mobile browser from squishing the white keys! */
+            flex-shrink: 0; 
+            
+            box-sizing: border-box;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            
+            cursor: pointer; -webkit-tap-highlight-color: transparent; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 15px; font-family: sans-serif; font-size: 14px; font-weight: bold; color: #aaa; user-select: none; z-index: 1; 
         }
+        .key.white:first-child { border-left: 1px solid #ccc; } 
         .key.white:active, .key.white.active { background: #e0e0e0; box-shadow: inset 0 2px 5px rgba(0,0,0,0.4); color: #333; }
         
         /* Black Keys */
         .key.black {
-            touch-action: none; /* Allows true multi-touch tapping! */
-            width: 40px; height: 150px; background: linear-gradient(#333, #000); position: absolute; right: -20px; top: 0; z-index: 10; border-radius: 0 0 4px 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; -webkit-tap-highlight-color: transparent; 
+            /* We removed touch-action: none here too! */
+            width: 40px; 
+            height: 150px; 
+            background: linear-gradient(#333, #000); 
+            position: absolute; top: 0; z-index: 10; 
+            border-radius: 0 0 4px 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; -webkit-tap-highlight-color: transparent; 
         }
         .key.black:active, .key.black.active { background: #111; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
     </style>
@@ -43,16 +67,11 @@
     <script>
         const keyContainer = document.getElementById('key-container'); 
         let noteNumber = 1;
-        let zIndexCounter = 100; 
-
+        let whiteKeyCount = 0; 
         const noteNamesArray = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-        // 1. GENERATE THE 88 KEYS
+        // 1. GENERATE THE 88 KEYS WITH FLAWLESS HITBOXES
         while (noteNumber <= 88) {
-            const group = document.createElement('div');
-            group.className = 'key-group';
-            group.style.zIndex = zIndexCounter--; 
-
             const cOffset = (noteNumber + 8) % 12;
             const noteName = noteNamesArray[cOffset];
             const octave = Math.floor((noteNumber + 8) / 12);
@@ -61,20 +80,25 @@
             whiteKey.className = 'key white';
             whiteKey.setAttribute('data-note', noteNumber);
             whiteKey.innerText = noteName + octave; 
-            group.appendChild(whiteKey);
+            keyContainer.appendChild(whiteKey);
+            
+            whiteKeyCount++; 
 
             if (cOffset !== 4 && cOffset !== 11 && noteNumber !== 88) {
                 noteNumber++; 
                 const blackKey = document.createElement('div');
                 blackKey.className = 'key black';
                 blackKey.setAttribute('data-note', noteNumber);
-                group.appendChild(blackKey);
+                
+                // Because white keys can no longer shrink, this math is now 100% pixel-perfect!
+                blackKey.style.left = `${(whiteKeyCount * 60) - 20}px`;
+                
+                keyContainer.appendChild(blackKey);
             }
-
-            keyContainer.appendChild(group); 
             noteNumber++; 
         }
 
+        // 2. THE AUDIO ENGINE
         const keys = document.querySelectorAll('.key');
 
         keys.forEach(key => {
@@ -90,14 +114,12 @@
 
                 this.classList.add('active');
 
-                // NEW: The 3-second cutoff runs quietly in the background!
                 setTimeout(function() {
                     audio.pause();
                     audio.currentTime = 0;
                 }, 3000);
             });
 
-            // WE REVERTED TO THE EXACT SYNTAX THAT WORKED FOR YOU!
             key.addEventListener('pointerup', function() { this.classList.remove('active'); });
             key.addEventListener('pointerleave', function() { this.classList.remove('active'); });
             key.addEventListener('pointercancel', function() { this.classList.remove('active'); });
