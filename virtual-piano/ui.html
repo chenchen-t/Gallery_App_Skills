@@ -177,47 +177,34 @@
                 const note = this.getAttribute('data-note');
                 const audioUrl = `https://chenchen-t.github.io/Gallery_App_Skills/virtual-piano/assets/${note}.mp3`;
                 
+                // By creating a new Audio object on every tap, we allow multiple 
+                // rapid taps of the same key to naturally layer over each other!
                 const audio = new Audio(audioUrl);
                 audio.currentTime = 0; 
-                audio.volume = 1.0; // Ensure volume is full when starting
                 audio.play().catch(e => console.warn("Waiting for audio:", e));
 
-                // SAVE the audio object to this specific key so we can stop it later!
-                this.currentAudio = audio; 
-
+                // Add the visual pressed effect
                 this.classList.add('active');
             });
 
-            // We create a reusable function to fade out the sound
+            // NEW: Only remove the visual effect. Let the audio ring naturally!
             const releaseKey = function() {
                 this.classList.remove('active');
-                
-                // If there is an audio file currently playing for this key...
-                if (this.currentAudio) {
-                    const audioToFade = this.currentAudio;
-                    this.currentAudio = null; // Clear it so we don't trigger it twice
-                    
-                    // Rapidly fade out the volume over 100ms
-                    let fadePoint = 1.0;
-                    const fadeInterval = setInterval(() => {
-                        if (fadePoint > 0.1) {
-                            fadePoint -= 0.1; // Drop volume by 10%
-                            audioToFade.volume = fadePoint;
-                        } else {
-                            // Once silent, stop it completely and clear the timer
-                            clearInterval(fadeInterval);
-                            audioToFade.pause();
-                            audioToFade.currentTime = 0;
-                        }
-                    }, 10); // Happens every 10 milliseconds
-                }
             };
 
-            // Trigger the fade-out when the finger lifts or slides off the key
+            // Trigger the visual release when the finger lifts or slides off
             key.addEventListener('pointerup', releaseKey);
             key.addEventListener('pointerleave', releaseKey);
-            key.addEventListener('pointercancel', releaseKey); // Good safety net for mobile!
+            key.addEventListener('pointercancel', releaseKey); 
         });
+
+        // AUTO-SCROLL TO MIDDLE C
+        setTimeout(() => {
+            const middleC = document.querySelector('.key.white[data-note="40"]');
+            if (middleC) {
+                middleC.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+            }
+        }, 50);
 
         // AUTO-SCROLL TO MIDDLE C
         setTimeout(() => {
