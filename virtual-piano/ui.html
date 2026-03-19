@@ -3,143 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>88-Key Piano with Scroll Bar</title>
+    <title>88-Key Piano</title>
     <style>
-        body {
-            margin: 0;
-            background-color: #1e1e2f;
-            display: flex;
-            align-items: center;
-            height: 100vh;
-            overflow-y: hidden; 
-        }
-
-        #piano-scroll-container {
-            width: 100%;
-            overflow-x: auto;
-            white-space: nowrap;
-            -ms-overflow-style: none; 
-            scrollbar-width: none; 
-            padding: 20px;
-            touch-action: pan-x; 
-        }
-        #piano-scroll-container::-webkit-scrollbar {
-            display: none; 
-        }
-
-        /* The main piano body now stacks the keys and the scroll bar vertically */
-        #piano {
-            display: inline-flex;
-            flex-direction: column; 
-            background: #222;
-            padding: 10px 10px 0 10px; /* Removed bottom padding so the lip attaches flush */
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
-
-        /* NEW: A wrapper just for the keys */
-        #key-container {
-            display: inline-flex;
-            position: relative;
-        }
-
-        /* NEW: The safe-zone scroll bar under the keys */
-        #scroll-lip {
-            height: 60px; /* Big, thumb-friendly touch target */
-            background: linear-gradient(to bottom, #333, #1a1a1a);
-            border-top: 2px solid #111;
-            border-radius: 0 0 10px 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 -10px; /* Stretches to fill the container perfectly */
-            
-            /* Styling the hint text */
-            color: #666;
-            font-family: sans-serif;
-            font-size: 16px;
-            font-weight: bold;
-            letter-spacing: 3px;
-            user-select: none;
-        }
-
-        .key-group {
-            position: relative;
-            display: inline-block;
-        }
-
+        body { margin: 0; background-color: #1e1e2f; display: flex; align-items: center; height: 100vh; overflow-y: hidden; }
+        #piano-scroll-container { width: 100%; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; padding: 20px; touch-action: pan-x; }
+        #piano-scroll-container::-webkit-scrollbar { display: none; }
+        
+        #piano { display: inline-flex; flex-direction: column; background: #222; padding: 10px 10px 0 10px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        #key-container { display: inline-flex; position: relative; }
+        
+        #scroll-lip { height: 60px; background: linear-gradient(to bottom, #333, #1a1a1a); border-top: 2px solid #111; border-radius: 0 0 10px 10px; display: flex; align-items: center; justify-content: center; margin: 0 -10px; color: #666; font-family: sans-serif; font-size: 16px; font-weight: bold; letter-spacing: 3px; user-select: none; }
+        
+        .key-group { position: relative; display: inline-block; }
+        
         /* White Keys */
         .key.white {
-            width: 60px;
-            height: 250px;
-            background: white;
-            border: 1px solid #ccc;
-            border-radius: 0 0 5px 5px;
-            margin: 0 1px;
-            cursor: pointer;
-            box-shadow: 0 4px 5px rgba(0,0,0,0.2);
-            -webkit-tap-highlight-color: transparent;
-            
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 15px;
-            box-sizing: border-box; 
-            
-            font-family: sans-serif;
-            font-size: 14px;
-            font-weight: bold;
-            color: #aaa; 
-            user-select: none; 
+            touch-action: none; /* Allows true multi-touch tapping! */
+            width: 60px; height: 250px; background: white; border: 1px solid #ccc; border-radius: 0 0 5px 5px; margin: 0 1px; cursor: pointer; box-shadow: 0 4px 5px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 15px; box-sizing: border-box; font-family: sans-serif; font-size: 14px; font-weight: bold; color: #aaa; user-select: none; 
         }
-        .key.white:active, .key.white.active {
-            background: #e0e0e0;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
-            color: #333; 
-        }
-
+        .key.white:active, .key.white.active { background: #e0e0e0; box-shadow: inset 0 2px 5px rgba(0,0,0,0.4); color: #333; }
+        
         /* Black Keys */
         .key.black {
-            width: 40px;
-            height: 150px;
-            background: linear-gradient(#333, #000);
-            position: absolute;
-            right: -20px; 
-            top: 0;
-            z-index: 10; 
-            border-radius: 0 0 4px 4px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
+            touch-action: none; /* Allows true multi-touch tapping! */
+            width: 40px; height: 150px; background: linear-gradient(#333, #000); position: absolute; right: -20px; top: 0; z-index: 10; border-radius: 0 0 4px 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); cursor: pointer; -webkit-tap-highlight-color: transparent; 
         }
-        .key.black:active, .key.black.active {
-            background: #111;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
-        }
+        .key.black:active, .key.black.active { background: #111; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
     </style>
 </head>
 <body>
 
     <div id="piano-scroll-container">
         <div id="piano">
-            <!-- Keys go here now -->
             <div id="key-container"></div>
-            
-            <!-- The new touch-safe scroll bar -->
-            <div id="scroll-lip">
-                ⟷ SLIDE HERE TO SCROLL ⟷
-            </div>
+            <div id="scroll-lip">⟷ SLIDE HERE TO SCROLL ⟷</div>
         </div>
     </div>
 
     <script>
-        // Notice we changed this to grab 'key-container' instead of 'piano'
         const keyContainer = document.getElementById('key-container'); 
         let noteNumber = 1;
         let zIndexCounter = 100; 
 
         const noteNamesArray = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
+        // 1. GENERATE THE 88 KEYS
         while (noteNumber <= 88) {
             const group = document.createElement('div');
             group.className = 'key-group';
@@ -157,16 +65,18 @@
 
             if (cOffset !== 4 && cOffset !== 11 && noteNumber !== 88) {
                 noteNumber++; 
-                
                 const blackKey = document.createElement('div');
                 blackKey.className = 'key black';
                 blackKey.setAttribute('data-note', noteNumber);
                 group.appendChild(blackKey);
             }
 
-            keyContainer.appendChild(group); // Add keys to the new container!
+            keyContainer.appendChild(group); 
             noteNumber++; 
         }
+
+        // 2. THE AUDIO ENGINE
+        const keys = document.querySelectorAll('.key');
 
         keys.forEach(key => {
             key.addEventListener('pointerdown', function(event) {
@@ -177,29 +87,18 @@
                 
                 const audio = new Audio(audioUrl);
                 audio.currentTime = 0; 
-                audio.volume = 1.0; // Always start at max volume
                 audio.play().catch(e => console.warn("Waiting for audio:", e));
 
                 this.classList.add('active');
 
-                // NEW: The 3-Second Cutoff Timer!
+                // NEW: Stop the sound entirely after exactly 3 seconds!
                 setTimeout(() => {
-                    let fadePoint = audio.volume;
-                    // Rapidly fade out over about 200 milliseconds to avoid a harsh "click"
-                    const fadeInterval = setInterval(() => {
-                        if (fadePoint > 0.1) {
-                            fadePoint -= 0.1; 
-                            audio.volume = fadePoint;
-                        } else {
-                            clearInterval(fadeInterval);
-                            audio.pause();
-                            audio.currentTime = 0;
-                        }
-                    }, 20); 
-                }, 3000); // 3000 milliseconds = exactly 3 seconds
+                    audio.pause();
+                    audio.currentTime = 0;
+                }, 3000);
             });
 
-            // Keep the visual release simple
+            // Handle the visual pop-up of the key
             const releaseKey = function() {
                 this.classList.remove('active');
             };
@@ -209,7 +108,7 @@
             key.addEventListener('pointercancel', releaseKey); 
         });
 
-        // AUTO-SCROLL TO MIDDLE C
+        // 3. AUTO-SCROLL TO MIDDLE C (C4)
         setTimeout(() => {
             const middleC = document.querySelector('.key.white[data-note="40"]');
             if (middleC) {
