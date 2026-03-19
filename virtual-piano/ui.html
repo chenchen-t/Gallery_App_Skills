@@ -75,7 +75,6 @@
             noteNumber++; 
         }
 
-        // 2. THE AUDIO ENGINE
         const keys = document.querySelectorAll('.key');
 
         keys.forEach(key => {
@@ -91,21 +90,17 @@
 
                 this.classList.add('active');
 
-                // NEW: Stop the sound entirely after exactly 3 seconds!
-                setTimeout(() => {
+                // NEW: The 3-second cutoff runs quietly in the background!
+                setTimeout(function() {
                     audio.pause();
                     audio.currentTime = 0;
                 }, 3000);
             });
 
-            // Handle the visual pop-up of the key
-            const releaseKey = function() {
-                this.classList.remove('active');
-            };
-
-            key.addEventListener('pointerup', releaseKey);
-            key.addEventListener('pointerleave', releaseKey);
-            key.addEventListener('pointercancel', releaseKey); 
+            // WE REVERTED TO THE EXACT SYNTAX THAT WORKED FOR YOU!
+            key.addEventListener('pointerup', function() { this.classList.remove('active'); });
+            key.addEventListener('pointerleave', function() { this.classList.remove('active'); });
+            key.addEventListener('pointercancel', function() { this.classList.remove('active'); });
         });
 
         // 3. AUTO-SCROLL TO MIDDLE C (C4)
