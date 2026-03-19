@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Virtual Piano</title>
+    <title>88-Key Virtual Piano</title>
     <style>
         body {
             margin: 0;
@@ -21,7 +21,6 @@
             -ms-overflow-style: none; 
             scrollbar-width: none; 
             padding: 20px;
-            /* Allows horizontal scrolling, but prevents vertical pull-to-refresh on mobile */
             touch-action: pan-x; 
         }
         #piano-scroll-container::-webkit-scrollbar {
@@ -36,7 +35,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
-        /* NEW: A wrapper to hold the keys side-by-side without nesting them */
         .key-group {
             position: relative;
             display: inline-block;
@@ -65,10 +63,9 @@
             height: 150px;
             background: linear-gradient(#333, #000);
             position: absolute;
-            /* -20px pushes it exactly halfway over the edge of the wrapper */
             right: -20px; 
             top: 0;
-            z-index: 10; /* Forces it to the absolute top layer */
+            z-index: 10; 
             border-radius: 0 0 4px 4px;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
             cursor: pointer;
@@ -83,49 +80,57 @@
 <body>
 
     <div id="piano-scroll-container">
-        <div id="piano">
-            <!-- Notice how they are now siblings inside a 'key-group' wrapper! -->
-            <div class="key-group">
-                <div class="key white" data-note="1"></div>
-                <div class="key black" data-note="2"></div>
-            </div>
-            <div class="key-group">
-                <div class="key white" data-note="3"></div>
-                <div class="key black" data-note="4"></div>
-            </div>
-            <div class="key-group">
-                <div class="key white" data-note="5"></div>
-                <!-- E has no black key! -->
-            </div>
-            <div class="key-group">
-                <div class="key white" data-note="6"></div>
-                <div class="key black" data-note="7"></div>
-            </div>
-            <div class="key-group">
-                <div class="key white" data-note="8"></div>
-                <div class="key black" data-note="9"></div>
-            </div>
-            <div class="key-group">
-                <div class="key white" data-note="10"></div>
-                <div class="key black" data-note="11"></div>
-            </div>
-            <div class="key-group">
-                <div class="key white" data-note="12"></div>
-                <!-- B has no black key! -->
-            </div>
-        </div>
+        <!-- We leave this empty in the HTML because Javascript will fill it! -->
+        <div id="piano"></div>
     </div>
 
     <script>
+        const piano = document.getElementById('piano');
+        let noteNumber = 1;
+
+        // 1. GENERATE THE 88 KEYS DYNAMICALLY
+        while (noteNumber <= 88) {
+            const group = document.createElement('div');
+            group.className = 'key-group';
+
+            // Create the white key
+            const whiteKey = document.createElement('div');
+            whiteKey.className = 'key white';
+            whiteKey.setAttribute('data-note', noteNumber);
+            group.appendChild(whiteKey);
+
+            // A standard piano has no black key after E (offset 4) and B (offset 11)
+            // We use modulo math to figure out exactly what note we are on
+            const cOffset = (noteNumber + 8) % 12;
+            
+            // If it's NOT an E, NOT a B, and NOT the final 88th key... add a black key!
+            if (cOffset !== 4 && cOffset !== 11 && noteNumber !== 88) {
+                noteNumber++; // Step up to the black key's number
+                
+                const blackKey = document.createElement('div');
+                blackKey.className = 'key black';
+                blackKey.setAttribute('data-note', noteNumber);
+                group.appendChild(blackKey);
+            }
+
+            // Add the group to the piano
+            piano.appendChild(group);
+            
+            // Move to the next white key for the next loop
+            noteNumber++; 
+        }
+
+        // 2. ATTACH THE AUDIO EVENT LISTENERS
         const keys = document.querySelectorAll('.key');
 
         keys.forEach(key => {
             key.addEventListener('pointerdown', function(event) {
-                // By completely separating the HTML elements, this click is now 100% accurate
                 event.stopPropagation(); 
                 
                 const note = this.getAttribute('data-note');
-                const audioUrl = `assets/${note}.mp3`;
+                
+                // Keep this path matched to however you are pulling from GitHub!
+                const audioUrl = `https://chenchen-t.github.io/Gallery_App_Skills/virtual-piano/assets/${note}.mp3`;
                 
                 const audio = new Audio(audioUrl);
                 audio.currentTime = 0; 
