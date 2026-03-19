@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>88-Key Labeled Piano</title>
+    <title>88-Key Piano with Scroll Bar</title>
     <style>
         body {
             margin: 0;
@@ -27,12 +27,40 @@
             display: none; 
         }
 
+        /* The main piano body now stacks the keys and the scroll bar vertically */
         #piano {
             display: inline-flex;
-            background: #333;
-            padding: 10px;
+            flex-direction: column; 
+            background: #222;
+            padding: 10px 10px 0 10px; /* Removed bottom padding so the lip attaches flush */
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        /* NEW: A wrapper just for the keys */
+        #key-container {
+            display: inline-flex;
+            position: relative;
+        }
+
+        /* NEW: The safe-zone scroll bar under the keys */
+        #scroll-lip {
+            height: 60px; /* Big, thumb-friendly touch target */
+            background: linear-gradient(to bottom, #333, #1a1a1a);
+            border-top: 2px solid #111;
+            border-radius: 0 0 10px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 -10px; /* Stretches to fill the container perfectly */
+            
+            /* Styling the hint text */
+            color: #666;
+            font-family: sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            user-select: none;
         }
 
         .key-group {
@@ -93,23 +121,28 @@
 <body>
 
     <div id="piano-scroll-container">
-        <div id="piano"></div>
+        <div id="piano">
+            <!-- Keys go here now -->
+            <div id="key-container"></div>
+            
+            <!-- The new touch-safe scroll bar -->
+            <div id="scroll-lip">
+                ⟷ SLIDE HERE TO SCROLL ⟷
+            </div>
+        </div>
     </div>
 
     <script>
-        const piano = document.getElementById('piano');
+        // Notice we changed this to grab 'key-container' instead of 'piano'
+        const keyContainer = document.getElementById('key-container'); 
         let noteNumber = 1;
-        let zIndexCounter = 100; // NEW: We will use this to fix the touch bug!
+        let zIndexCounter = 100; 
 
         const noteNamesArray = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-        // 1. GENERATE THE 88 KEYS DYNAMICALLY
         while (noteNumber <= 88) {
             const group = document.createElement('div');
             group.className = 'key-group';
-            
-            // THE MAGIC FIX: This guarantees the left group is ALWAYS physically layered 
-            // over the right group, so the black key touch target is flawless.
             group.style.zIndex = zIndexCounter--; 
 
             const cOffset = (noteNumber + 8) % 12;
@@ -131,11 +164,10 @@
                 group.appendChild(blackKey);
             }
 
-            piano.appendChild(group);
+            keyContainer.appendChild(group); // Add keys to the new container!
             noteNumber++; 
         }
 
-        // 2. ATTACH THE AUDIO EVENT LISTENERS
         const keys = document.querySelectorAll('.key');
 
         keys.forEach(key => {
@@ -156,14 +188,13 @@
             key.addEventListener('pointerleave', function() { this.classList.remove('active'); });
         });
 
-        // 3. BONUS: AUTO-SCROLL TO MIDDLE C WHEN LOADED!
-        window.addEventListener('load', () => {
-            // Note #40 is Middle C (C4) on a standard piano
+        // AUTO-SCROLL TO MIDDLE C
+        setTimeout(() => {
             const middleC = document.querySelector('.key.white[data-note="40"]');
             if (middleC) {
-                middleC.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+                middleC.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
             }
-        });
+        }, 50);
     </script>
 </body>
 </html>
