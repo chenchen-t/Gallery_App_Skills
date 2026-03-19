@@ -11,19 +11,18 @@
             display: flex;
             align-items: center;
             height: 100vh;
-            /* Prevent vertical scrolling on the whole page */
             overflow-y: hidden; 
         }
 
-        /* This container allows the horizontal scrolling! */
         #piano-scroll-container {
             width: 100%;
             overflow-x: auto;
             white-space: nowrap;
-            /* Hides the scrollbar visually but keeps functionality */
             -ms-overflow-style: none; 
             scrollbar-width: none; 
             padding: 20px;
+            /* Allows horizontal scrolling, but prevents vertical pull-to-refresh on mobile */
+            touch-action: pan-x; 
         }
         #piano-scroll-container::-webkit-scrollbar {
             display: none; 
@@ -31,11 +30,16 @@
 
         #piano {
             display: inline-flex;
-            position: relative;
             background: #333;
             padding: 10px;
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        /* NEW: A wrapper to hold the keys side-by-side without nesting them */
+        .key-group {
+            position: relative;
+            display: inline-block;
         }
 
         /* White Keys */
@@ -46,7 +50,6 @@
             border: 1px solid #ccc;
             border-radius: 0 0 5px 5px;
             margin: 0 1px;
-            position: relative;
             cursor: pointer;
             box-shadow: 0 4px 5px rgba(0,0,0,0.2);
             -webkit-tap-highlight-color: transparent;
@@ -62,13 +65,14 @@
             height: 150px;
             background: linear-gradient(#333, #000);
             position: absolute;
-            /* Positions the black key exactly between two white keys */
-            right: -21px; 
+            /* -20px pushes it exactly halfway over the edge of the wrapper */
+            right: -20px; 
             top: 0;
-            z-index: 10;
+            z-index: 10; /* Forces it to the absolute top layer */
             border-radius: 0 0 4px 4px;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
         .key.black:active, .key.black.active {
             background: #111;
@@ -80,45 +84,58 @@
 
     <div id="piano-scroll-container">
         <div id="piano">
-            <!-- Nesting the black key inside the white key makes positioning incredibly easy -->
-            <div class="key white" data-note="C4"><div class="key black" data-note="Cs4"></div></div>
-            <div class="key white" data-note="D4"><div class="key black" data-note="Ds4"></div></div>
-            <div class="key white" data-note="E4"></div> <!-- No black key after E -->
-            <div class="key white" data-note="F4"><div class="key black" data-note="Fs4"></div></div>
-            <div class="key white" data-note="G4"><div class="key black" data-note="Gs4"></div></div>
-            <div class="key white" data-note="A4"><div class="key black" data-note="As4"></div></div>
-            <div class="key white" data-note="B4"></div> <!-- No black key after B -->
+            <!-- Notice how they are now siblings inside a 'key-group' wrapper! -->
+            <div class="key-group">
+                <div class="key white" data-note="C4"></div>
+                <div class="key black" data-note="Cs4"></div>
+            </div>
+            <div class="key-group">
+                <div class="key white" data-note="D4"></div>
+                <div class="key black" data-note="Ds4"></div>
+            </div>
+            <div class="key-group">
+                <div class="key white" data-note="E4"></div>
+                <!-- E has no black key! -->
+            </div>
+            <div class="key-group">
+                <div class="key white" data-note="F4"></div>
+                <div class="key black" data-note="Fs4"></div>
+            </div>
+            <div class="key-group">
+                <div class="key white" data-note="G4"></div>
+                <div class="key black" data-note="Gs4"></div>
+            </div>
+            <div class="key-group">
+                <div class="key white" data-note="A4"></div>
+                <div class="key black" data-note="As4"></div>
+            </div>
+            <div class="key-group">
+                <div class="key white" data-note="B4"></div>
+                <!-- B has no black key! -->
+            </div>
         </div>
     </div>
 
     <script>
-        // Select all keys (both white and black)
         const keys = document.querySelectorAll('.key');
 
         keys.forEach(key => {
-            // Use 'pointerdown' so it registers instantly on touchscreens AND mice
-            key.addEventListener('pointerdown', (event) => {
-                // Prevent the white key from playing if we tapped the black key sitting on top of it
+            key.addEventListener('pointerdown', function(event) {
+                // By completely separating the HTML elements, this click is now 100% accurate
                 event.stopPropagation(); 
                 
-                // Get the note name from the HTML data attribute
-                const note = key.getAttribute('data-note');
-                
-                // Construct the URL to your GitHub assets folder
+                const note = this.getAttribute('data-note');
                 const audioUrl = `assets/${note}.mp3`;
                 
-                // Create and play the sound
                 const audio = new Audio(audioUrl);
-                audio.currentTime = 0; // Allows rapid re-pressing
-                audio.play().catch(e => console.warn("Audio not found yet:", e));
+                audio.currentTime = 0; 
+                audio.play().catch(e => console.warn("Waiting for audio files:", e));
 
-                // Add a visual 'pressed' effect
-                key.classList.add('active');
+                this.classList.add('active');
             });
 
-            // Remove the visual effect when the user lifts their finger
-            key.addEventListener('pointerup', () => key.classList.remove('active'));
-            key.addEventListener('pointerleave', () => key.classList.remove('active'));
+            key.addEventListener('pointerup', function() { this.classList.remove('active'); });
+            key.addEventListener('pointerleave', function() { this.classList.remove('active'); });
         });
     </script>
 </body>
