@@ -168,8 +168,6 @@
             noteNumber++; 
         }
 
-        const keys = document.querySelectorAll('.key');
-
         keys.forEach(key => {
             key.addEventListener('pointerdown', function(event) {
                 event.stopPropagation(); 
@@ -179,22 +177,37 @@
                 
                 const audio = new Audio(audioUrl);
                 audio.currentTime = 0; 
-                audio.play().catch(e => console.warn("Waiting for audio files:", e));
+                audio.volume = 1.0; // Always start at max volume
+                audio.play().catch(e => console.warn("Waiting for audio:", e));
 
                 this.classList.add('active');
+
+                // NEW: The 3-Second Cutoff Timer!
+                setTimeout(() => {
+                    let fadePoint = audio.volume;
+                    // Rapidly fade out over about 200 milliseconds to avoid a harsh "click"
+                    const fadeInterval = setInterval(() => {
+                        if (fadePoint > 0.1) {
+                            fadePoint -= 0.1; 
+                            audio.volume = fadePoint;
+                        } else {
+                            clearInterval(fadeInterval);
+                            audio.pause();
+                            audio.currentTime = 0;
+                        }
+                    }, 20); 
+                }, 3000); // 3000 milliseconds = exactly 3 seconds
             });
 
-            key.addEventListener('pointerup', function() { this.classList.remove('active'); });
-            key.addEventListener('pointerleave', function() { this.classList.remove('active'); });
-        });
+            // Keep the visual release simple
+            const releaseKey = function() {
+                this.classList.remove('active');
+            };
 
-        // AUTO-SCROLL TO MIDDLE C
-        setTimeout(() => {
-            const middleC = document.querySelector('.key.white[data-note="40"]');
-            if (middleC) {
-                middleC.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
-            }
-        }, 50);
+            key.addEventListener('pointerup', releaseKey);
+            key.addEventListener('pointerleave', releaseKey);
+            key.addEventListener('pointercancel', releaseKey); 
+        });
 
         // AUTO-SCROLL TO MIDDLE C
         setTimeout(() => {
