@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>88-Key Virtual Piano</title>
+    <title>88-Key Labeled Piano</title>
     <style>
         body {
             margin: 0;
@@ -51,13 +51,28 @@
             cursor: pointer;
             box-shadow: 0 4px 5px rgba(0,0,0,0.2);
             -webkit-tap-highlight-color: transparent;
+            
+            /* NEW: Flexbox perfectly aligns the text to the bottom center */
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 15px;
+            box-sizing: border-box; /* Keeps the padding from making the key taller */
+            
+            /* NEW: Typography for the labels */
+            font-family: sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            color: #aaa; /* Light grey text so it isn't distracting */
+            user-select: none; /* Prevents text highlighting when tapping rapidly */
         }
         .key.white:active, .key.white.active {
             background: #e0e0e0;
             box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+            color: #333; /* Makes the text dark when the key is pressed! */
         }
 
-        /* Black Keys */
+        /* Black Keys (No text needed on these) */
         .key.black {
             width: 40px;
             height: 150px;
@@ -80,29 +95,36 @@
 <body>
 
     <div id="piano-scroll-container">
-        <!-- We leave this empty in the HTML because Javascript will fill it! -->
         <div id="piano"></div>
     </div>
 
     <script>
         const piano = document.getElementById('piano');
         let noteNumber = 1;
+        
+        // NEW: An array of note names so we know exactly what key we are building
+        const noteNamesArray = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
         // 1. GENERATE THE 88 KEYS DYNAMICALLY
         while (noteNumber <= 88) {
             const group = document.createElement('div');
             group.className = 'key-group';
 
+            // Calculate the exact note letter and the octave number
+            const cOffset = (noteNumber + 8) % 12;
+            const noteName = noteNamesArray[cOffset];
+            const octave = Math.floor((noteNumber + 8) / 12);
+
             // Create the white key
             const whiteKey = document.createElement('div');
             whiteKey.className = 'key white';
             whiteKey.setAttribute('data-note', noteNumber);
+            
+            // NEW: Add the text directly inside the white key!
+            whiteKey.innerText = noteName + octave; 
+            
             group.appendChild(whiteKey);
 
-            // A standard piano has no black key after E (offset 4) and B (offset 11)
-            // We use modulo math to figure out exactly what note we are on
-            const cOffset = (noteNumber + 8) % 12;
-            
             // If it's NOT an E, NOT a B, and NOT the final 88th key... add a black key!
             if (cOffset !== 4 && cOffset !== 11 && noteNumber !== 88) {
                 noteNumber++; // Step up to the black key's number
@@ -113,10 +135,7 @@
                 group.appendChild(blackKey);
             }
 
-            // Add the group to the piano
             piano.appendChild(group);
-            
-            // Move to the next white key for the next loop
             noteNumber++; 
         }
 
@@ -128,8 +147,6 @@
                 event.stopPropagation(); 
                 
                 const note = this.getAttribute('data-note');
-                
-                // Keep this path matched to however you are pulling from GitHub!
                 const audioUrl = `https://chenchen-t.github.io/Gallery_App_Skills/virtual-piano/assets/${note}.mp3`;
                 
                 const audio = new Audio(audioUrl);
